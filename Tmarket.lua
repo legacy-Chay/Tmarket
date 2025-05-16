@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.3")
+script_version("1.4")
 
 local ffi = require("ffi")
 local imgui = require("mimgui")
@@ -19,6 +19,7 @@ local updateURL = "https://raw.githubusercontent.com/legacy-Chay/Tmarket/refs/he
 
 local configURL = nil
 local cachedNick = nil
+local isUpdating = false
 
 local function utf8ToCp1251(str)
     return iconv.new("WINDOWS-1251", "UTF-8"):iconv(str)
@@ -42,31 +43,81 @@ local function convertFileToCP1251(path)
 end
 
 local function downloadConfigFile(callback)
-    if configURL then
-        downloadUrlToFile(configURL, configPath, function(_, status)
-            if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-                -- Конвертируем содержимое конфига в CP1251
-                if convertFileToCP1251(configPath) then
-                    if callback then callback() end
-                else
-                    sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации конфига в CP1251.", -1)
-                end
-            end
-        end)
+    if not configURL then
+        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}URL конфига не указан.", -1)
+        return
     end
+    sampAddChatMessage("{A47AFF}[Tmarket] Начинаю загрузку конфига...", -1)
+    downloadUrlToFile(configURL, configPath, function(_, status)
+        if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+            sampAddChatMessage("{32CD32}[Tmarket] Конфиг загружен, конвертирую...", -1)
+            if convertFileToCP1251(configPath) then
+                sampAddChatMessage("{32CD32}[Tmarket] Конвертация конфига успешна.", -1)
+                if callback then callback() end
+            else
+                sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации конфига в CP1251.", -1)
+            end
+        elseif status == dlstatus.STATUSEX_FAILED then
+            sampAddChatMessage("{FF0000}[Tmarket] Ошибка загрузки конфига.", -1)
+        end
+    end)
 end
 
 local function downloadAndConvertScript(url, path)
+    if isUpdating then return end
+    isUpdating = true
+    sampAddChatMessage("{A47AFF}[Tmarket] Начинаю обновление скрипта...", -1)
+
     downloadUrlToFile(url, path, function(_, status)
         if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+            sampAddChatMessage("{A47AFF}[Tmarket] Скрипт загружен, начинаю конвертацию...", -1)
             if convertFileToCP1251(path) then
-                wait(100) -- ждем, чтобы ОС успела записать файл
+                sampAddChatMessage("{32CD32}[Tmarket] Конвертация успешна, перезагрузка скрипта...", -1)
+                wait(200) -- Ждем немного, чтобы ОС успела записать файл
                 thisScript():reload()
             else
                 sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации скрипта в CP1251.", -1)
+                isUpdating = false
             end
+        elseif status == dlstatus.STATUSEX_FAILED then
+            sampAddChatMessage("{FF0000}[Tmarket] Ошибка загрузки обновления скрипта.", -1)
+            isUpdating = false
         end
     end)
+end
+
+local function checkNick(nick)
+    if isUpdating then return false end
+    local response = requests.get(updateURL)
+    if response.status_code == 200 then
+        local j = decodeJson(response.text)
+        configURL = j.config_url or nil
+
+        if configURL and j.nicknames and type(j.nicknames) == "table" then
+            for _, n in ipairs(j.nicknames) do
+                if nick == n then
+                    if thisScript().version ~= j.last then
+                        downloadAndConvertScript(j.url, thisScript().path)
+                    end
+                    return true
+                end
+            end
+            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Вы не в списке разрешённых пользователей.", -1)
+        else
+            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", -1)
+        end
+    else
+        sampAddChatMessage("{FF0000}[Tmarket] Ошибка запроса обновлений: ".. tostring(response.status_code), -1)
+    end
+    return false
+end
+
+local function getNicknameSafe()
+    local result, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
+    if result and id >= 0 and id <= 1000 then
+        return sampGetPlayerNickname(id)
+    end
+    return nil
 end
 
 local function loadData()
@@ -99,36 +150,6 @@ local function saveData()
         end
         f:close()
     end
-end
-
-local function checkNick(nick)
-    local response = requests.get(updateURL)
-    if response.status_code == 200 then
-        local j = decodeJson(response.text)
-        configURL = j.config_url or nil
-
-        if configURL and j.nicknames and type(j.nicknames) == "table" then
-            for _, n in ipairs(j.nicknames) do
-                if nick == n then
-                    if thisScript().version ~= j.last then
-                        downloadAndConvertScript(j.url, thisScript().path)
-                    end
-                    return true
-                end
-            end
-        else
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", 0xFFFFFF)
-        end
-    end
-    return false
-end
-
-local function getNicknameSafe()
-    local result, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
-    if result and id >= 0 and id <= 1000 then
-        return sampGetPlayerNickname(id)
-    end
-    return nil
 end
 
 local function theme()
@@ -209,7 +230,8 @@ imgui.OnFrame(
                     if imgui.InputText("##"..idx..i, buf, ffi.sizeof(buf)) then
                         if idx == 1 then v.name = decode(v.name_buf)
                         elseif idx == 2 then v.buy = decode(v.buy_buf)
-                        else v.sell = decode(v.sell_buf) end
+                        else v.sell = decode(v.sell_buf)
+                        end
                     end
                     imgui.NextColumn()
                 end
@@ -218,30 +240,40 @@ imgui.OnFrame(
             imgui.Columns(1)
             imgui.EndChild()
         else
-            imgui.Text(u8("Товары не найдены"))
+            imgui.TextColored(imgui.ImVec4(0.8, 0.3, 0.3, 1), u8("Товары не найдены"))
+        end
+
+        if imgui.Button(u8("Сохранить изменения")) then
+            saveData()
+            sampAddChatMessage("{32CD32}[Tmarket] Изменения сохранены.", -1)
+        end
+        imgui.SameLine()
+        if imgui.Button(u8("Обновить конфиг")) then
+            downloadConfigFile(loadData)
         end
 
         imgui.End()
     end
 )
 
-function main()
-    repeat wait(0) until isSampAvailable()
-
-    repeat
-        cachedNick = getNicknameSafe()
-        wait(500)
-    until cachedNick ~= nil
-
-    if checkNick(cachedNick) then
-        downloadConfigFile(loadData)
-        sampAddChatMessage("{4169E1}[Tmarket загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
-    else
-        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}У вас {FF0000}нет доступа{FFFFFF}. Приобретите {32CD32}Tmarket{FFFFFF} для использования.", 0xFFFFFF)
-        return
+function onScriptLoad()
+    loadData()
+    cachedNick = getNicknameSafe()
+    if cachedNick then
+        checkNick(cachedNick)
     end
+end
 
-    sampRegisterChatCommand("tmarket", function() window[0] = not window[0] end)
+function onPlayerUpdate(playerId)
+    if playerId == sampGetPlayerIdByCharHandle(PLAYER_PED) then
+        local nick = getNicknameSafe()
+        if nick and nick ~= cachedNick then
+            cachedNick = nick
+            checkNick(nick)
+        end
+    end
+end
 
-    while true do wait(500) end
+function onScriptUnload()
+    saveData()
 end
