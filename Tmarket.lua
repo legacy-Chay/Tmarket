@@ -15,7 +15,7 @@ local window = imgui.new.bool(false)
 local search = ffi.new("char[128]", "")
 local items = {}
 local configPath = getWorkingDirectory() .. "\\config\\market_price.ini"
-local updateURL = "https://raw.githubusercontent.com/legacy-Chay/legacy/refs/heads/main/update.json"
+local updateURL = "https://raw.githubusercontent.com/legacy-Chay/Tmarket/refs/heads/main/update.json"
 
 local configURL = nil
 local cachedNick = nil
@@ -106,7 +106,7 @@ local function checkNick(nick)
                 end
             end
         else
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", 0xFFFFFF)
+            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}ГЉГ®Г­ГґГЁГЈ Г¤Г«Гї ГўГ Г± {FF0000}Г­ГҐ Г­Г Г©Г¤ГҐГ­{FFFFFF}. Г‘ГўГїГ¦ГЁГІГҐГ±Гј Г± {1E90FF}ГўГ«Г Г¤ГҐГ«ГјГ¶ГҐГ¬{FFFFFF} ГЁГ«ГЁ {32CD32}ГЇГ°ГЁГ®ГЎГ°ГҐГІГЁГІГҐ Tmarket{FFFFFF}.", 0xFFFFFF)
         end
     end
     return false
@@ -145,15 +145,15 @@ imgui.OnFrame(
         imgui.SetNextWindowSize(imgui.ImVec2(900, 600), imgui.Cond.FirstUseEver)
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 
-        if not imgui.Begin(u8("legacy.-Tmarket — Таблица цен v1.3"), window) then
+        if not imgui.Begin(u8("legacy.-Tmarket вЂ” Г’Г ГЎГ«ГЁГ¶Г  Г¶ГҐГ­ v1.3"), window) then
             imgui.End()
             return
         end
 
-        imgui.InputTextWithHint("##search", u8("Поиск по товарам..."), search, ffi.sizeof(search))
+        imgui.InputTextWithHint("##search", u8("ГЏГ®ГЁГ±ГЄ ГЇГ® ГІГ®ГўГ Г°Г Г¬..."), search, ffi.sizeof(search))
         imgui.SameLine()
-        if imgui.Button(u8("В разработке")) then
-            sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Функция в разработке.", -1)
+        if imgui.Button(u8("Г‚ Г°Г Г§Г°Г ГЎГ®ГІГЄГҐ")) then
+            sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Г”ГіГ­ГЄГ¶ГЁГї Гў Г°Г Г§Г°Г ГЎГ®ГІГЄГҐ.", -1)
         end
 
         imgui.Separator()
@@ -183,7 +183,7 @@ imgui.OnFrame(
             draw_list:AddLine(imgui.ImVec2(x1, y0), imgui.ImVec2(x1, y1), separatorColor, 1)
 
             imgui.Columns(3, nil, false)
-            for _, header in ipairs({u8("Товар"), u8("Скупка"), u8("Продажа")}) do
+            for _, header in ipairs({u8("Г’Г®ГўГ Г°"), u8("Г‘ГЄГіГЇГЄГ "), u8("ГЏГ°Г®Г¤Г Г¦Г ")}) do
                 local textWidth = imgui.CalcTextSize(header).x
                 imgui.SetCursorPosX(imgui.GetCursorPosX() + (colWidth - textWidth) / 2)
                 imgui.Text(header)
@@ -207,7 +207,7 @@ imgui.OnFrame(
             imgui.Columns(1)
             imgui.EndChild()
         else
-            imgui.Text(u8("Товары не найдены"))
+            imgui.Text(u8("Г’Г®ГўГ Г°Г» Г­ГҐ Г­Г Г©Г¤ГҐГ­Г»"))
         end
 
         imgui.End()
@@ -224,9 +224,9 @@ function main()
 
     if checkNick(cachedNick) then
         downloadConfigFile(loadData)
-        sampAddChatMessage("{4169E1}[Tmarket загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
+        sampAddChatMessage("{4169E1}[Tmarket Г§Г ГЈГ°ГіГ¦ГҐГ­]{FFFFFF}. ГЂГўГІГ®Г°: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
     else
-        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}У вас {FF0000}нет доступа{FFFFFF}. Приобретите {32CD32}Tmarket{FFFFFF} для использования.", 0xFFFFFF)
+        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Г“ ГўГ Г± {FF0000}Г­ГҐГІ Г¤Г®Г±ГІГіГЇГ {FFFFFF}. ГЏГ°ГЁГ®ГЎГ°ГҐГІГЁГІГҐ {32CD32}Tmarket{FFFFFF} Г¤Г«Гї ГЁГ±ГЇГ®Г«ГјГ§Г®ГўГ Г­ГЁГї.", 0xFFFFFF)
         return
     end
 
