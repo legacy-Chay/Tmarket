@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.8")
+script_version("1.2")
 
 local ffi = require("ffi")
 local imgui = require("mimgui")
@@ -26,25 +26,47 @@ end
 
 local function decode(buf) return u8:decode(ffi.string(buf)) end
 
+local function convertFileToCP1251(path)
+    local f = io.open(path, "r")
+    if not f then return false end
+    local content = f:read("*a")
+    f:close()
+
+    local conv = utf8ToCp1251(content)
+
+    f = io.open(path, "w")
+    if not f then return false end
+    f:write(conv)
+    f:close()
+    return true
+end
+
 local function downloadConfigFile(callback)
     if configURL then
         downloadUrlToFile(configURL, configPath, function(_, status)
-            if status == dlstatus.STATUSEX_ENDDOWNLOAD and callback then
-                local f = io.open(configPath, "r")
-                if f then
-                    local content = f:read("*a")
-                    f:close()
-
-                    local convertedContent = utf8ToCp1251(content)
-                    f = io.open(configPath, "w")
-                    f:write(convertedContent)
-                    f:close()
+            if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+                -- Конвертируем содержимое конфига в CP1251
+                if convertFileToCP1251(configPath) then
+                    if callback then callback() end
+                else
+                    sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации конфига в CP1251.", -1)
                 end
-
-                callback()
             end
         end)
     end
+end
+
+local function downloadAndConvertScript(url, path)
+    downloadUrlToFile(url, path, function(_, status)
+        if status == dlstatus.STATUSEX_ENDDOWNLOAD then
+            if convertFileToCP1251(path) then
+                wait(100) -- ждем, чтобы ОС успела записать файл
+                thisScript():reload()
+            else
+                sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации скрипта в CP1251.", -1)
+            end
+        end
+    end)
 end
 
 local function loadData()
@@ -89,24 +111,13 @@ local function checkNick(nick)
             for _, n in ipairs(j.nicknames) do
                 if nick == n then
                     if thisScript().version ~= j.last then
-                        downloadUrlToFile(j.url, thisScript().path, function(_, status)
-                            if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-                                local f = io.open(thisScript().path, "r")
-                                local content = f:read("*a")
-                                f:close()
-                                local conv = utf8ToCp1251(content)
-                                f = io.open(thisScript().path, "w")
-                                f:write(conv)
-                                f:close()
-                                thisScript():reload()
-                            end
-                        end)
+                        downloadAndConvertScript(j.url, thisScript().path)
                     end
                     return true
                 end
             end
         else
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Êîíôèã äëÿ âàñ {FF0000}íå íàéäåí{FFFFFF}. Ñâÿæèòåñü ñ {1E90FF}âëàäåëüöåì{FFFFFF} èëè {32CD32}ïðèîáðåòèòå Tmarket{FFFFFF}.", 0xFFFFFF)
+            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", 0xFFFFFF)
         end
     end
     return false
@@ -145,15 +156,15 @@ imgui.OnFrame(
         imgui.SetNextWindowSize(imgui.ImVec2(900, 600), imgui.Cond.FirstUseEver)
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
 
-        if not imgui.Begin(u8("legacy.-Tmarket — Òàáëèöà öåí v1.3"), window) then
+        if not imgui.Begin(u8("legacy.-Tmarket — Таблица цен v1.3"), window) then
             imgui.End()
             return
         end
 
-        imgui.InputTextWithHint("##search", u8("Ïîèñê ïî òîâàðàì..."), search, ffi.sizeof(search))
+        imgui.InputTextWithHint("##search", u8("Поиск по товарам..."), search, ffi.sizeof(search))
         imgui.SameLine()
-        if imgui.Button(u8("Â ðàçðàáîòêå")) then
-            sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Ôóíêöèÿ â ðàçðàáîòêå.", -1)
+        if imgui.Button(u8("В разработке")) then
+            sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Функция в разработке.", -1)
         end
 
         imgui.Separator()
@@ -183,7 +194,7 @@ imgui.OnFrame(
             draw_list:AddLine(imgui.ImVec2(x1, y0), imgui.ImVec2(x1, y1), separatorColor, 1)
 
             imgui.Columns(3, nil, false)
-            for _, header in ipairs({u8("Òîâàð"), u8("Ñêóïêà"), u8("Ïðîäàæà")}) do
+            for _, header in ipairs({u8("Товар"), u8("Скупка"), u8("Продажа")}) do
                 local textWidth = imgui.CalcTextSize(header).x
                 imgui.SetCursorPosX(imgui.GetCursorPosX() + (colWidth - textWidth) / 2)
                 imgui.Text(header)
@@ -207,7 +218,7 @@ imgui.OnFrame(
             imgui.Columns(1)
             imgui.EndChild()
         else
-            imgui.Text(u8("Òîâàðû íå íàéäåíû"))
+            imgui.Text(u8("Товары не найдены"))
         end
 
         imgui.End()
@@ -224,9 +235,9 @@ function main()
 
     if checkNick(cachedNick) then
         downloadConfigFile(loadData)
-          sampAddChatMessage("{4169E1}[Tmarket в 1 загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
+        sampAddChatMessage("{4169E1}[Tmarket загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
     else
-        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Ó âàñ {FF0000}íåò äîñòóïà{FFFFFF}. Ïðèîáðåòèòå {32CD32}Tmarket{FFFFFF} äëÿ èñïîëüçîâàíèÿ.", 0xFFFFFF)
+        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}У вас {FF0000}нет доступа{FFFFFF}. Приобретите {32CD32}Tmarket{FFFFFF} для использования.", 0xFFFFFF)
         return
     end
 
