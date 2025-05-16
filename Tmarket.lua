@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.7")
+script_version("1.8")
 
 local ffi = require("ffi")
 local imgui = require("mimgui")
@@ -224,7 +224,7 @@ function main()
 
     if checkNick(cachedNick) then
         downloadConfigFile(loadData)
-        sampAddChatMessage("{4169E1}[Tmarket çàãðóæåí]{FFFFFF}. Àâòîð: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
+          sampAddChatMessage("{4169E1}[Tmarket в 1 загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00FF)
     else
         sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Ó âàñ {FF0000}íåò äîñòóïà{FFFFFF}. Ïðèîáðåòèòå {32CD32}Tmarket{FFFFFF} äëÿ èñïîëüçîâàíèÿ.", 0xFFFFFF)
         return
