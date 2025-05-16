@@ -32,9 +32,7 @@ local function convertFileToCP1251(path)
     if not f then return false end
     local content = f:read("*a")
     f:close()
-
     local conv = utf8ToCp1251(content)
-
     f = io.open(path, "w")
     if not f then return false end
     f:write(conv)
@@ -43,22 +41,12 @@ local function convertFileToCP1251(path)
 end
 
 local function downloadConfigFile(callback)
-    if not configURL then
-        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}URL конфига не указан.", -1)
-        return
-    end
-    sampAddChatMessage("{A47AFF}[Tmarket] Начинаю загрузку конфига...", -1)
+    if not configURL then return end
     downloadUrlToFile(configURL, configPath, function(_, status)
         if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-            sampAddChatMessage("{32CD32}[Tmarket] Конфиг загружен, конвертирую...", -1)
             if convertFileToCP1251(configPath) then
-                sampAddChatMessage("{32CD32}[Tmarket] Конвертация конфига успешна.", -1)
                 if callback then callback() end
-            else
-                sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации конфига в CP1251.", -1)
             end
-        elseif status == dlstatus.STATUSEX_FAILED then
-            sampAddChatMessage("{FF0000}[Tmarket] Ошибка загрузки конфига.", -1)
         end
     end)
 end
@@ -66,21 +54,15 @@ end
 local function downloadAndConvertScript(url, path)
     if isUpdating then return end
     isUpdating = true
-    sampAddChatMessage("{A47AFF}[Tmarket] Начинаю обновление скрипта...", -1)
-
     downloadUrlToFile(url, path, function(_, status)
         if status == dlstatus.STATUSEX_ENDDOWNLOAD then
-            sampAddChatMessage("{A47AFF}[Tmarket] Скрипт загружен, начинаю конвертацию...", -1)
             if convertFileToCP1251(path) then
-                sampAddChatMessage("{32CD32}[Tmarket] Конвертация успешна, перезагрузка скрипта...", -1)
-                wait(200) -- Ждем немного, чтобы ОС успела записать файл
+                wait(200)
                 thisScript():reload()
             else
-                sampAddChatMessage("{FF0000}[Tmarket] Ошибка конвертации скрипта в CP1251.", -1)
                 isUpdating = false
             end
         elseif status == dlstatus.STATUSEX_FAILED then
-            sampAddChatMessage("{FF0000}[Tmarket] Ошибка загрузки обновления скрипта.", -1)
             isUpdating = false
         end
     end)
@@ -92,7 +74,6 @@ local function checkNick(nick)
     if response.status_code == 200 then
         local j = decodeJson(response.text)
         configURL = j.config_url or nil
-
         if configURL and j.nicknames and type(j.nicknames) == "table" then
             for _, n in ipairs(j.nicknames) do
                 if nick == n then
@@ -102,12 +83,7 @@ local function checkNick(nick)
                     return true
                 end
             end
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Вы не в списке разрешённых пользователей.", -1)
-        else
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", -1)
         end
-    else
-        sampAddChatMessage("{FF0000}[Tmarket] Ошибка запроса обновлений: ".. tostring(response.status_code), -1)
     end
     return false
 end
@@ -123,9 +99,9 @@ end
 local function loadData()
     items = {}
     local f = io.open(configPath, "r")
-    if not f then 
-        downloadConfigFile(loadData) 
-        return 
+    if not f then
+        downloadConfigFile(loadData)
+        return
     end
     while true do
         local name, buy, sell = f:read("*l"), f:read("*l"), f:read("*l")
@@ -176,44 +152,35 @@ imgui.OnFrame(
         local resX, resY = getScreenResolution()
         imgui.SetNextWindowSize(imgui.ImVec2(900, 600), imgui.Cond.FirstUseEver)
         imgui.SetNextWindowPos(imgui.ImVec2(resX / 2, resY / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-
         if not imgui.Begin(u8("legacy.-Tmarket — Таблица цен v1.3"), window) then
             imgui.End()
             return
         end
-
         imgui.InputTextWithHint("##search", u8("Поиск по товарам..."), search, ffi.sizeof(search))
         imgui.SameLine()
         if imgui.Button(u8("В разработке")) then
             sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Функция в разработке.", -1)
         end
-
         imgui.Separator()
-
         local contentWidth, contentHeight = imgui.GetContentRegionAvail().x, imgui.GetContentRegionAvail().y
         local filter = decode(search):lower()
-
         local filteredItems = {}
         for _, v in ipairs(items) do
             if filter == "" or v.name:lower():find(filter, 1, true) then
                 table.insert(filteredItems, v)
             end
         end
-
         if #filteredItems > 0 then
             local colWidth = (contentWidth - 20) / 3
             imgui.BeginChild("##scroll_vertical", imgui.ImVec2(-1, contentHeight), true)
-
             local draw_list = imgui.GetWindowDrawList()
             local child_pos = imgui.GetCursorScreenPos()
             local style = imgui.GetStyle()
             local y0, y1 = child_pos.y - style.ItemSpacing.y, child_pos.y + contentHeight + imgui.GetScrollMaxY()
             local x0, x1 = child_pos.x + colWidth, child_pos.x + 2 * colWidth
-
             local separatorColor = imgui.GetColorU32(imgui.Col.Separator)
             draw_list:AddLine(imgui.ImVec2(x0, y0), imgui.ImVec2(x0, y1), separatorColor, 1)
             draw_list:AddLine(imgui.ImVec2(x1, y0), imgui.ImVec2(x1, y1), separatorColor, 1)
-
             imgui.Columns(3, nil, false)
             for _, header in ipairs({u8("Товар"), u8("Скупка"), u8("Продажа")}) do
                 local textWidth = imgui.CalcTextSize(header).x
@@ -222,7 +189,6 @@ imgui.OnFrame(
                 imgui.NextColumn()
             end
             imgui.Separator()
-
             local inputWidth = colWidth * 0.8
             for i, v in ipairs(filteredItems) do
                 for idx, buf in ipairs({v.name_buf, v.buy_buf, v.sell_buf}) do
@@ -236,44 +202,40 @@ imgui.OnFrame(
                     imgui.NextColumn()
                 end
             end
-
             imgui.Columns(1)
             imgui.EndChild()
         else
             imgui.TextColored(imgui.ImVec4(0.8, 0.3, 0.3, 1), u8("Товары не найдены"))
         end
-
-        if imgui.Button(u8("Сохранить изменения")) then
-            saveData()
-            sampAddChatMessage("{32CD32}[Tmarket] Изменения сохранены.", -1)
-        end
-        imgui.SameLine()
-        if imgui.Button(u8("Обновить конфиг")) then
-            downloadConfigFile(loadData)
-        end
-
+        -- Удалена кнопка "Сохранить изменения"
+        -- Кнопка "Обновить конфиг" удалена
         imgui.End()
     end
 )
 
 function onScriptLoad()
-    loadData()
     cachedNick = getNicknameSafe()
     if cachedNick then
         checkNick(cachedNick)
     end
-end
-
-function onPlayerUpdate(playerId)
-    if playerId == sampGetPlayerIdByCharHandle(PLAYER_PED) then
-        local nick = getNicknameSafe()
-        if nick and nick ~= cachedNick then
-            cachedNick = nick
-            checkNick(nick)
-        end
-    end
+    loadData()
 end
 
 function onScriptUnload()
     saveData()
+end
+
+function onCommandTmarket()
+    window[0] = not window[0]
+end
+
+function main()
+    repeat wait(0) until isSampAvailable()
+
+    sampRegisterChatCommand("tmarket", onCommandTmarket)
+
+    loadData()
+    while true do
+        wait(500)
+    end
 end
