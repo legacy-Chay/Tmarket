@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.5")
+script_version("1.6")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -200,7 +200,13 @@ end, function()
         imgui.Columns(1)
         imgui.EndChild()
     else
-        imgui.Text(u8("Товары не найдены"))
+        -- Центрированный текст "Товары не найдены"
+        local avail = imgui.GetContentRegionAvail()
+        local text = u8("Товары не найдены")
+        local textSize = imgui.CalcTextSize(text)
+        imgui.SetCursorPosX((avail.x - textSize.x) / 2)
+        imgui.SetCursorPosY(avail.y / 2 - textSize.y / 2)
+        imgui.Text(text)
     end
 
     imgui.End()
