@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.1")
+script_version("1.2")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -219,7 +219,6 @@ function main()
         downloadConfigFile(function()
             loadData()
             sampAddChatMessage("{4169E1}[Tmarket загружен]{FFFFFF}. Автор: {1E90FF}legacy{FFFFFF}", 0x00FF00)
-            sampAddChatMessage("{A47AFF}[Tmarket] {FFFFFF}Открыть окно: {A47AFF}/tmarket", -1)
             sampRegisterChatCommand("tmarket", function() window[0] = not window[0] end)
         end)
     else
