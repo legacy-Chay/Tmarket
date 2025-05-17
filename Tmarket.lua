@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.2")
+script_version("1.3")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -55,7 +55,7 @@ local function saveData()
     end
 end
 
--- Проверка ника и обновление
+-- Проверка ника и обновление (без лишних сообщений)
 local function checkNick(nick)
     local response = requests.get(updateURL)
     if response.status_code == 200 then
@@ -82,8 +82,6 @@ local function checkNick(nick)
                     return true
                 end
             end
-        else
-            sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}Конфиг для вас {FF0000}не найден{FFFFFF}. Свяжитесь с {1E90FF}владельцем{FFFFFF} или {32CD32}приобретите Tmarket{FFFFFF}.", -1)
         end
     end
     return false
