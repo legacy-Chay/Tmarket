@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.6")
+script_version("1.7")
 
 local ffi = require("ffi")
 local imgui = require("mimgui")
