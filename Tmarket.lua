@@ -223,7 +223,7 @@ function main()
     if checkNick(cachedNick) then
         downloadConfigFile(function()
             loadData()
-sampAddChatMessage(string.format("{4169E1}Tmarket v%s загружен. {FFFFFF}Активация: {1E90FF}/tmarket{FFFFFF}. Автор – {1E90FF}legacy{FFFFFF}.", thisScript().version), -1)
+sampAddChatMessage(string.format("[legacy.] Tmarket загружен | Активация - /tmarket", thisScript().version), -1)
             sampRegisterChatCommand("tmarket", function() window[0] = not window[0] end)
         end)
     else
