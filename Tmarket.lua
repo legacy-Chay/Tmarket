@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.73")
+script_version("1.74")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
