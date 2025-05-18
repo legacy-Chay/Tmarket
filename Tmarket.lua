@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.74")
+script_version("1.75")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -223,7 +223,7 @@ function main()
     if checkNick(cachedNick) then
         downloadConfigFile(function()
             loadData()
-sampAddChatMessage(string.format("[legacy.] Tmarket загружен | Активация - /tmarket", thisScript().version), -1)
+sampAddChatMessage(string.format("{80C0FF}Tmarket {6A5ACD}v%s {FFFFFF}загружен | {B0C4DE}Команда {FFFFFF}/tmarket {B0C4DE}для запуска", thisScript().version), -1)
             sampRegisterChatCommand("tmarket", function() window[0] = not window[0] end)
         end)
     else
