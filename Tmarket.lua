@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.70")
+script_version("1.71")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -227,7 +227,7 @@ function main()
             sampRegisterChatCommand("tmarket", function() window[0] = not window[0] end)
         end)
     else
-        sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}У вас {FF0000}нет доступа{FFFFFF}. Приобретите {32CD32}Tmarket{FFFFFF} для использования.", -1)
+      sampAddChatMessage("{FF8C00}[Tmarket]\n{FFFFFF}У вас {FF0000}нет доступа{FFFFFF}.\nПриобретите {32CD32}Tmarket{FFFFFF} для использования.", -1)
     end
 
     while true do wait(500) end
