@@ -1,6 +1,6 @@
 script_name("Tmarket")
 script_author("legacy.")
-script_version("1.76")
+script_version("1.77")
 
 local ffi = require("ffi")
 local encoding = require("encoding")
@@ -228,7 +228,6 @@ sampAddChatMessage(string.format("{80C0FF}Tmarket {6A5ACD}v%s {FFFFFF}загру
         end)
     else
 sampAddChatMessage("{FF8C00}[Tmarket] {FFFFFF}У вас {FF0000}нет доступа{FFFFFF}.", -1)
-sampAddChatMessage("{FFFFFF}Приобретите скрипт по ссылке: {1E90FF}https://example.com", -1)
     end
 
     while true do wait(500) end
